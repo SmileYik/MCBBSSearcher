@@ -1,4 +1,4 @@
-package tk.miskyle.mcbbssearcher.util;
+package tk.miskyle.mcbbssearcher.forum;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Properties;
-import tk.miskyle.mcbbssearcher.forum.ForumManager;
+import tk.miskyle.mcbbssearcher.McbbsSearcher;
 import tk.miskyle.mcbbssearcher.forum.data.Forum;
 import tk.miskyle.mcbbssearcher.forum.data.Item;
 import tk.miskyle.mcbbssearcher.forum.data.Section;
@@ -15,7 +15,7 @@ import tk.miskyle.mcbbssearcher.forum.data.SubSection;
 import tk.miskyle.mcbbssearcher.forum.update.ForumUpdate;
 
 public class ForumSaver {
-  public static final String FORUM_FILE_PATH = "./forum.properties";
+  public static final String FORUM_FILE_PATH = McbbsSearcher.DATA_FLOD + "./forum.properties";
   
   public static boolean checkProperties() {
     return new File(FORUM_FILE_PATH).exists();
@@ -262,8 +262,8 @@ public class ForumSaver {
       }
       Item item = new Item();
       item.setAgree(Boolean.parseBoolean(pro.getProperty(key + "agree")));
-      if (pro.containsKey(key + "auuther")) {
-        item.setAuther(pro.getProperty(key + "auuther"));        
+      if (pro.containsKey(key + "auther")) {
+        item.setAuther(pro.getProperty(key + "auther"));        
       }
       item.setDigest(Integer.parseInt(pro.getProperty(key + "digest")));
       item.setHeatlevel(Integer.parseInt(pro.getProperty(key + "heatLevel")));

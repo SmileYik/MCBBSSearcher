@@ -17,6 +17,7 @@ public class ForumUpdate {
   public static final  String FORUM_URL = FORUM_MAIN_URL + "forum.php";
   
   public static boolean updateFlag = false;
+  public static boolean updateFinished = false;
   
   @Test
   public void abc() {
@@ -40,7 +41,7 @@ public class ForumUpdate {
     }
     Forum forum = new Forum();
     try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(connection.getConnection().getInputStream()))) {
+        new InputStreamReader(connection.getConnection().getInputStream(), "UTF-8"))) {
       String line = null;
       while ((line = reader.readLine()) != null) {
         if (line.contains("forum.php?gid=")) {
@@ -76,7 +77,7 @@ public class ForumUpdate {
       return;
     }
     try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(connection.getConnection().getInputStream()))) {
+        new InputStreamReader(connection.getConnection().getInputStream(), "UTF-8"))) {
       String line = null;
       while ((line = reader.readLine()) != null) {
         if (line.contains("<h2><a href=\"")) {
@@ -113,7 +114,7 @@ public class ForumUpdate {
       return;
     }
     try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(connection.getConnection().getInputStream()))) {
+        new InputStreamReader(connection.getConnection().getInputStream(), "UTF-8"))) {
       String line = null;
       while ((line = reader.readLine()) != null) {
         if (line.contains("srhfid") && sub.getFid() == null) {
@@ -145,7 +146,7 @@ public class ForumUpdate {
       return;
     }
     try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(connection.getConnection().getInputStream()))) {
+        new InputStreamReader(connection.getConnection().getInputStream(), "UTF-8"))) {
       String line = null;
       
       LinkedList<String> lines = new LinkedList<>();
@@ -255,6 +256,8 @@ public class ForumUpdate {
     
     if (page < sub.getPageAmount() && updateFlag) {
       updateSubSection(sub, page + 1);
+    } else {
+      updateFinished = true;
     }
   }
   
@@ -263,6 +266,7 @@ public class ForumUpdate {
    */
   public static void startUpdate() {
     updateFlag = true;
+    updateFinished = false;
   }
   
   public static boolean isUpdate() {
@@ -275,4 +279,9 @@ public class ForumUpdate {
   public static void stopUpdate() {
     updateFlag = false;
   }
+
+  public static boolean isUpdateFinished() {
+    return updateFinished;
+  }
+  
 }

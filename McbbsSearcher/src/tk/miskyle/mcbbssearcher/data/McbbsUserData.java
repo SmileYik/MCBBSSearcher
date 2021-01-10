@@ -30,7 +30,7 @@ public class McbbsUserData {
   }
   
   public String getCookies() {
-    return cookies;
+    return cookies == null ? "" : cookies;
   }
   
   public void setCookies(String cookies) {

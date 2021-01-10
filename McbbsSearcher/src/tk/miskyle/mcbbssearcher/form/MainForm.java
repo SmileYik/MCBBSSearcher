@@ -1,10 +1,27 @@
 package tk.miskyle.mcbbssearcher.form;
 
 import java.awt.EventQueue;
-
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.Component;
+import java.awt.Desktop;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
+import javax.swing.JPopupMenu;
+import javax.swing.SwingConstants;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -19,90 +36,85 @@ import javax.swing.JProgressBar;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
-import javax.swing.text.TabExpander;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
-
 import tk.miskyle.mcbbssearcher.data.Setting;
+import tk.miskyle.mcbbssearcher.data.favorite.Favorite;
+import tk.miskyle.mcbbssearcher.data.favorite.FavoriteItem;
+import tk.miskyle.mcbbssearcher.data.history.History;
 import tk.miskyle.mcbbssearcher.forum.ForumManager;
+import tk.miskyle.mcbbssearcher.forum.ForumSaver;
 import tk.miskyle.mcbbssearcher.forum.data.Item;
 import tk.miskyle.mcbbssearcher.forum.data.SubSection;
 import tk.miskyle.mcbbssearcher.forum.update.ForumUpdate;
-import tk.miskyle.mcbbssearcher.util.ForumSaver;
-
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.io.File;
-import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.awt.event.KeyAdapter;
-import javax.swing.SwingConstants;
-import javax.swing.JPopupMenu;
-import java.awt.Component;
-import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.Color;
-import javax.swing.JCheckBox;
 
 public class MainForm {
-  private JFrame frame;
+  private static JLabel lblInfo;
+  
+  private JFrame frmMcbbssearcherVBy;
   private JTextField tfSearchBox;
   private JTable tableItems;
   private JTabbedPane tabbedPane;
+  private JScrollPane scrollPane11;
   private JTree treeForum;
   private JList<String> listLike;
-  private JLabel lblInfo;
-  private JButton tfmSelect;
-  private JButton tfmUpdate;
-  private JButton btnSearch;
-  private JButton btnSaveAllForum;
-  private JButton btnStopUpdate;
-  private JButton btnStoreOut;
-  private JButton btnLoadIn;
-  private JScrollPane scrollPane_1;
-  private JPanel panel;
-  private JProgressBar progressBar;
-  private JPopupMenu treeFormMenu;
-  
-  private String selectedSubSection;
-  private String selectedSection;
   private DefaultTableModel tableItemsModel;
-  private HashMap<String, Item> items = new HashMap<>();
-  private HashMap<String, Item> searchedItem;
+  private DefaultListModel<String> favoriteList;
+  private JButton btnSearch;
+  private JButton btnStopUpdate;
+  private JButton btnShowHistory;
+  private JProgressBar progressBar;
+
+  //Setting
+  private JPanel panel;
+  private JButton btnSaveAllForum;
+  private JButton btnMcbbsUserForm;
+  private JButton btnRefreshSetting;
+  private JButton btnSaveSetting;
   private JCheckBox chckbxSaveWhenLike;
   private JCheckBox chckbxSaveWhenUpdate;
   private JCheckBox chckbxSolution403;
   private JCheckBox chckbxAutoSave;
-  private JButton btnRefreshSetting;
-  private JButton btnSaveSetting;
+  
+  //tree menu
+  private JPopupMenu treeFormMenu;
+  private JButton btnStoreOut;
+  private JButton btnLoadIn;
+  private JButton tfmSelect;
+  private JButton tfmUpdate;
+  
+  //table menu
+  private JPopupMenu tableMeum;
+  private JButton btnAddToFavorite;
+  private JButton btnItemBrower;
+  
+  //like menu
+  private JPopupMenu menuLikeList;
+  private JButton btnCreateLikeList;
+  private JButton btnDeleteLikeList;
+  private JButton btnRenameLikeList;
+  private JButton btnShowLikeList;
+  private JButton btnOutputLikeList;
+  private JButton btnInputLikeList;
+  
+  private HashMap<String, Item> items = new HashMap<>();
+  private HashMap<String, Item> searchedItem;
+  private String selectedSubSection;
+  private String selectedSection;
+  private boolean favorite = false;
+  private boolean history = false;
+
   
   /**
    * Launch the application.
    */
-  public static void main(String[] args) {
-    
-    if (!ForumSaver.checkProperties()) {
-      JOptionPane.showMessageDialog(null, 
-          "未检测到有效论坛数据, 正在抓取论坛数据\n"
-          + "当数据收集完毕后会打开用户界面.\n"
-          + "此项过程一般与网络连接有关,\n"
-          + "请保持网络通畅并耐心等待!\n"
-          + "点击确定开始获取数据.");
-      ForumSaver.createDefaultProperties();
-    }
-    
+  public static void main() {
     EventQueue.invokeLater(new Runnable() {
       public void run() {
         try {
           MainForm window = new MainForm();
-          window.frame.setVisible(true);
+          window.frmMcbbssearcherVBy.setVisible(true);
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -115,30 +127,30 @@ public class MainForm {
    */
   public MainForm() {
     initialize();
-    
-    ForumManager.setForum(ForumSaver.loadForum());
-    
+
     setupForumList();
     setupListener();
     refreshSetting();
+    showFavorite();
   }
 
   /**
    * Initialize the contents of the frame.
    */
   private void initialize() {
-    frame = new JFrame();
-    frame.setBounds(100, 100, 1035, 533);
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-    frame.getContentPane().setLayout(null);
+    frmMcbbssearcherVBy = new JFrame();
+    frmMcbbssearcherVBy.setTitle("McbbsSearcher  v1.0.0  by: miSkYle");
+    frmMcbbssearcherVBy.setBounds(100, 100, 1035, 533);
+    frmMcbbssearcherVBy.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frmMcbbssearcherVBy.getContentPane().setLayout(null);
     
     lblInfo = new JLabel("");
     lblInfo.setBounds(0, 468, 1017, 27);
     lblInfo.setHorizontalAlignment(SwingConstants.CENTER);
-    frame.getContentPane().add(lblInfo);
+    frmMcbbssearcherVBy.getContentPane().add(lblInfo);
     tabbedPane = new JTabbedPane(JTabbedPane.TOP);
     tabbedPane.setBounds(0, 13, 199, 457);
-    frame.getContentPane().add(tabbedPane);
+    frmMcbbssearcherVBy.getContentPane().add(tabbedPane);
     
     JScrollPane scrollPane = new JScrollPane();
     tabbedPane.addTab("论坛", null, scrollPane, null);
@@ -167,19 +179,42 @@ public class MainForm {
     
     listLike = new JList<>();
     scrollPane1.setViewportView(listLike);
+    favoriteList = new DefaultListModel<>();
+    listLike.setModel(favoriteList);
     
-    scrollPane_1 = new JScrollPane();
-    tabbedPane.addTab("设定", null, scrollPane_1, null);
+    menuLikeList = new JPopupMenu();
+    addPopup(listLike, menuLikeList);
+    
+    btnShowLikeList = new JButton("查看");
+    menuLikeList.add(btnShowLikeList);
+    
+    btnOutputLikeList = new JButton("导出");
+    menuLikeList.add(btnOutputLikeList);
+    
+    btnInputLikeList = new JButton("导入");
+    menuLikeList.add(btnInputLikeList);
+    
+    btnCreateLikeList = new JButton("创建");
+    menuLikeList.add(btnCreateLikeList);
+    
+    btnDeleteLikeList = new JButton("删除");
+    menuLikeList.add(btnDeleteLikeList);
+    
+    btnRenameLikeList = new JButton("更名");
+    menuLikeList.add(btnRenameLikeList);
+    
+    scrollPane11 = new JScrollPane();
+    tabbedPane.addTab("设定", null, scrollPane11, null);
     
     panel = new JPanel();
-    scrollPane_1.setViewportView(panel);
+    scrollPane11.setViewportView(panel);
     panel.setLayout(null);
     
     btnSaveAllForum = new JButton("保存所有论坛数据");
     btnSaveAllForum.setBounds(10, 10, 172, 32);
     panel.add(btnSaveAllForum);
     
-    JButton btnMcbbsUserForm = new JButton("Mcbbs 用户设定");
+    btnMcbbsUserForm = new JButton("Mcbbs 用户设定");
     btnMcbbsUserForm.setBounds(10, 77, 172, 32);
     panel.add(btnMcbbsUserForm);
     
@@ -213,7 +248,7 @@ public class MainForm {
     
     JScrollPane scrollPane2 = new JScrollPane();
     scrollPane2.setBounds(201, 38, 816, 432);
-    frame.getContentPane().add(scrollPane2);
+    frmMcbbssearcherVBy.getContentPane().add(scrollPane2);
     
     tableItems = new JTable();
     tableItemsModel = getDefaltTableModel();
@@ -232,11 +267,20 @@ public class MainForm {
     tableItems.getColumnModel().getColumn(9).setPreferredWidth(60);
     tableItems.getColumnModel().getColumn(10).setPreferredWidth(40);
     tableItems.getColumnModel().getColumn(11).setPreferredWidth(60);
+    
+    tableMeum = new JPopupMenu();
+    addPopup(tableItems, tableMeum);
+    
+    btnItemBrower = new JButton("浏览");
+    tableMeum.add(btnItemBrower);
+    
+    btnAddToFavorite = new JButton("收藏");
+    tableMeum.add(btnAddToFavorite);
     scrollPane2.setViewportView(tableItems);
     
     JMenuBar menuBar = new JMenuBar();
     menuBar.setBounds(201, 10, 813, 27);
-    frame.getContentPane().add(menuBar);
+    frmMcbbssearcherVBy.getContentPane().add(menuBar);
     
     JMenu mnItemMenu = new JMenu(" . . . ");
     menuBar.add(mnItemMenu);
@@ -244,8 +288,8 @@ public class MainForm {
     btnStopUpdate = new JButton("停止更新");
     mnItemMenu.add(btnStopUpdate);
     
-    JLabel labelTask = new JLabel("无任务");
-    menuBar.add(labelTask);
+    btnShowHistory = new JButton("历史记录");
+    mnItemMenu.add(btnShowHistory);
     
     tfSearchBox = new JTextField();
     menuBar.add(tfSearchBox);
@@ -256,7 +300,7 @@ public class MainForm {
     
     progressBar = new JProgressBar();
     progressBar.setBounds(0, 468, 1017, 27);
-    frame.getContentPane().add(progressBar);
+    frmMcbbssearcherVBy.getContentPane().add(progressBar);
   }
   
   private void setupForumList() {
@@ -272,6 +316,9 @@ public class MainForm {
   }
   
   private void loadItems(String section, String subSectionName) {
+    favorite = false;
+    history = false;
+    tableItems.setToolTipText("");
     SubSection sub = 
         ForumManager.getForum().getSections().get(section).getSubs().get(subSectionName);
     System.out.println(sub);
@@ -420,6 +467,73 @@ public class MainForm {
   }
   
   private void setupListener() {
+    
+    //选择一个条目并打开
+    btnItemBrower.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent arg0) {
+        tableMeum.setVisible(false);
+        if (tableItems.getSelectedRow() == -1
+            || tableItems.getSelectedRows().length != 1) {
+          return;
+        }
+        Item item = 
+            items.get(tableItems.getModel().getValueAt(tableItems.getSelectedRow(), 0));
+        browse(item);
+      }
+    });
+    
+    //添加到收藏.
+    btnAddToFavorite.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        tableMeum.setVisible(false);
+        if (favorite) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "这已经是在收藏夹里了, 不能重复选择收藏!");
+          return;
+        }
+        if (tableItems.getSelectedRow() == -1
+            || tableItems.getSelectedRows().length != 1) {
+          return;
+        }
+        Item item = 
+            items.get(tableItems.getModel().getValueAt(tableItems.getSelectedRow(), 0));
+        FavoriteSelectForm.show(item);
+        if (Setting.enableSaveWhenLike) {
+          Favorite.save();
+        }
+      }
+    });
+    
+    //双击选择一个项目.
+    tableItems.addMouseListener(new MouseAdapter() {
+      @Override
+      public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() == 1
+            && tableItems.getSelectedRow() != -1
+            && tableItems.getSelectedRows().length == 1) {
+          String name = (String) tableItems.getModel().getValueAt(tableItems.getSelectedRow(), 0);
+          if (favorite) {
+            FavoriteItem item = Favorite.getNowShowItems().get(name);
+            String text = item.getAttachString() + " ---" + item.getSaveTimeString(); 
+            setInfoText(text);
+            tableItems.setToolTipText(text);
+          } else if (history) {
+            String text = History.getInfo(items.get(name).getName());
+            setInfoText(text);
+            tableItems.setToolTipText(text);
+          }
+          return;
+        } else if (e.getClickCount() != 2
+            || tableItems.getSelectedRow() == -1
+            || tableItems.getSelectedRows().length != 1) {
+          return;
+        }
+        
+        Item item = 
+            items.get(tableItems.getModel().getValueAt(tableItems.getSelectedRow(), 0));
+        browse(item);
+      }
+    });
+    
     //双击论坛板块
     treeForum.addMouseListener(new MouseAdapter() {
       @Override
@@ -475,6 +589,10 @@ public class MainForm {
         ForumUpdate.startUpdate();
         new Thread(() -> {
           ForumUpdate.updateSubSection(subS, 1);
+          if (Setting.enableSaveWhenUpdate) {
+            ForumSaver.saveForum();
+            History.save();
+          }
         }).start();
         
         new Timer().schedule(new TimerTask() {
@@ -485,11 +603,16 @@ public class MainForm {
               setInfoText("更新终止");
               this.cancel();
               return;
+            } else if (ForumUpdate.isUpdateFinished()) {
+              setInfoText("更新完成!");
+              progressBar.setValue(progressBar.getMaximum());
+              this.cancel();
+              return;
             }
             
             //更新更新进度信息
             int size = subS.getItems().size();
-            int aimSize = subS.getPageAmount() * 23;
+            int aimSize = subS.getPageAmount() * 28;
             setInfoText(String.format("更新中: %.2f ", size * 100 / (double) aimSize) + "%");
             progressBar.setMaximum(aimSize);
             progressBar.setValue(size);
@@ -518,10 +641,10 @@ public class MainForm {
         
         File aim = chooseFile();
         if (aim == null) {
-          JOptionPane.showMessageDialog(frame, "未选中文件!");
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "未选中文件!");
         } else {
           ForumSaver.saveSubForumToFile(aim, subS, section);
-          JOptionPane.showMessageDialog(frame, "导出成功!");
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "导出成功!");
         }
         
       }
@@ -534,10 +657,10 @@ public class MainForm {
         treeFormMenu.setVisible(false);
         File aim = chooseFile();
         if (aim == null) {
-          JOptionPane.showMessageDialog(frame, "未选中文件!");
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "未选中文件!");
         } else {
           SubSection sub = ForumSaver.loadSubSection(aim);
-          JOptionPane.showMessageDialog(frame, "导入成功!\n"
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "导入成功!\n"
               + "导入至子版块: " + sub.getName());
           setupForumList();
         }
@@ -549,6 +672,10 @@ public class MainForm {
     btnStopUpdate.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ForumUpdate.stopUpdate();
+        if (Setting.enableSaveWhenUpdate) {
+          ForumSaver.saveForum();
+          History.save();
+        }
       }
     });
     
@@ -570,7 +697,7 @@ public class MainForm {
     tfSearchBox.addKeyListener(new KeyAdapter() {
       @Override
       public void keyPressed(KeyEvent e) {
-        if (e.getID() == KeyEvent.VK_ENTER) {
+        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
           if (items == null
               || tfSearchBox.getText().isEmpty()) {
             //恢复默认列表
@@ -586,7 +713,9 @@ public class MainForm {
     btnSaveAllForum.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         ForumSaver.saveForum();
-        JOptionPane.showMessageDialog(frame, "保存成功!");
+        Favorite.save();
+        History.save();
+        JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "保存成功!");
       }
     });
     
@@ -623,7 +752,8 @@ public class MainForm {
         Setting.enableAutoSave = chckbxAutoSave.isSelected();
         if (Setting.enableAutoSave) {
           String time = 
-              JOptionPane.showInputDialog("多久保存一次? (单位为: 分)", Setting.saveTime);
+              JOptionPane.showInputDialog(
+                  frmMcbbssearcherVBy, "多久保存一次? (单位为: 分)", Setting.saveTime);
           Setting.saveTime = Integer.parseInt(time);
         }
       }
@@ -640,9 +770,204 @@ public class MainForm {
     btnSaveSetting.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         Setting.save();
+        JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "保存成功!");
       }
     });
     
+    //打开MCBBS用户设定窗口
+    btnMcbbsUserForm.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        McbbsUserForm.showUsers(false);
+      }
+    });
+    
+    //双击收藏夹
+    listLike.addMouseListener(new MouseAdapter() {
+      @Override
+      public void mouseClicked(MouseEvent e) {
+        if (e.getClickCount() != 2
+            || listLike.isSelectionEmpty()
+            || listLike.getSelectedValue().isEmpty()) {
+          return;
+        }
+        Favorite.setNowShow(listLike.getSelectedValue());
+        showFavoriteList();
+      }
+    });
+    
+    //显示收藏夹列表内容
+    btnShowLikeList.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent arg0) {
+        menuLikeList.setVisible(false);
+        if (listLike.isSelectionEmpty()
+            || listLike.getSelectedValue().isEmpty()) {
+          return;
+        }
+        Favorite.setNowShow(listLike.getSelectedValue());
+        showFavoriteList();
+      }
+    });
+    
+    //创建收藏夹
+    btnCreateLikeList.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        menuLikeList.setVisible(false);
+        String name = JOptionPane.showInputDialog(frmMcbbssearcherVBy, "请输入收藏夹名");
+        if (name == null || name.isEmpty()) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "输入名字不合法");
+          return;
+        }
+        if (Favorite.getFavoriteList().containsKey(name)) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "该收藏夹已存在");
+          return;
+        }
+        Favorite.createFavoriteList(name);
+        showFavorite();
+        if (Setting.enableSaveWhenLike) {
+          Favorite.save();
+        }
+      }
+    });
+    
+    //删除收藏夹
+    btnDeleteLikeList.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        menuLikeList.setVisible(false);
+        if (listLike.isSelectionEmpty()
+            || listLike.getSelectedValue().isEmpty()) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "没有选择一个收藏夹");
+          return;
+        }
+        String name = listLike.getSelectedValue();
+        
+        String code = JOptionPane.showInputDialog(frmMcbbssearcherVBy, 
+                  "你确认要删除\"" + name + "\"收藏夹吗?"
+                + "\n这将会删除该收藏夹内所有条目."
+                + "\n输入该收藏夹名字以进行确认删除操作!");
+        if (code != null && code.equalsIgnoreCase(name)) {
+          Favorite.getFavoriteList().remove(name);
+          showFavorite();
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "删除成功!");
+        } else {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "取消删除!");
+        }
+        favorite = false;
+        if (Setting.enableSaveWhenLike) {
+          Favorite.save();
+        }
+      }
+    });
+    
+    //重命名收藏夹
+    btnRenameLikeList.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        menuLikeList.setVisible(false);
+        if (listLike.isSelectionEmpty()
+            || listLike.getSelectedValue().isEmpty()) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "没有选择一个收藏夹");
+          return;
+        }
+        String old = listLike.getSelectedValue();
+        String name = 
+            JOptionPane.showInputDialog(frmMcbbssearcherVBy, "请输入收藏夹名", old);
+        if (name == null || name.isEmpty()) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "输入名字不合法");
+          return;
+        }
+        if (Favorite.getFavoriteList().containsKey(name)) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "该收藏夹已存在");
+          return;
+        } else if (name.equalsIgnoreCase(old)) {
+          return;
+        }
+        favorite = false;
+        Favorite.rename(old, name);
+        showFavorite();
+        JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "重命名成功!");
+        if (Setting.enableSaveWhenLike) {
+          Favorite.save();
+        }
+      }
+    });
+    
+    //导出收藏夹到文件.
+    btnOutputLikeList.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        menuLikeList.setVisible(false);
+        if (listLike.isSelectionEmpty()
+            || listLike.getSelectedValue().isEmpty()) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "没有选择一个收藏夹");
+          return;
+        }
+        String name = listLike.getSelectedValue();
+        File path = chooseFile();
+        if (path == null) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "选择文件过程中出现问题.");
+          return;
+        }
+        Favorite.save(path, name);
+        JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "收藏夹保存至\n" + path);
+      }
+    });
+    
+    //导入收藏夹
+    btnInputLikeList.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        menuLikeList.setVisible(false);
+        File path = chooseFile();
+        if (path == null) {
+          JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "选择文件过程中出现问题.");
+          return;
+        }
+        Favorite.load(path);
+        showFavorite();
+        JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "读取完毕!");
+        if (Setting.enableSaveWhenLike) {
+          Favorite.save();
+        }
+      }
+    });
+    
+    //显示历史记录
+    btnShowHistory.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        showHistory();
+      }
+    });
+  }
+  
+  private void showHistory() {
+    favorite = false;
+    history = true;
+    items.clear();
+    History.getItems().forEach((k, v) -> {
+      v.getItem().setTitle(v.getItem().getName());
+      items.put(v.getItem().getTitle(), v.getItem());
+    });
+    resetItems();
+  }
+  
+  /**
+   * 显示收藏夹内条目.
+   */
+  private void showFavoriteList() {
+    favorite = true;
+    history = false;
+    items.clear();
+    Favorite.getNowShowItems().forEach((k, v) -> {
+      items.put(k, v.getItem());
+    });
+    resetItems();
+  }
+  
+  /**
+   * 显示收藏夹列表.
+   */
+  private void showFavorite() {
+    favoriteList.clear();
+    Favorite.getFavoriteList().keySet().forEach(name -> {
+      favoriteList.addElement(name);
+    });
   }
   
   private static void addPopup(Component component, final JPopupMenu popup) {
@@ -673,7 +998,11 @@ public class MainForm {
     return null;
   }
   
-  private void setInfoText(String text) {
+  /**
+   * modify info.
+   * @param text info.
+   */
+  public static void setInfoText(String text) {
     new Timer().schedule(new TimerTask() {
 
       @Override
@@ -689,5 +1018,34 @@ public class MainForm {
     chckbxSaveWhenUpdate.setSelected(Setting.enableSaveWhenUpdate);
     chckbxSaveWhenLike.setSelected(Setting.enableSaveWhenLike);
     chckbxSolution403.setSelected(Setting.solution403);
+  }
+  
+  /**
+   * 浏览网页.
+   * @param item 目的条目
+   */
+  public void browse(Item item) {
+    if (favorite) {
+      History.look(item, "收藏夹", "收藏夹", "收藏夹中浏览: " + Favorite.getNowShow());
+    } else if (history) {
+      History.look(item, "历史记录", "历史记录", "历史记录中浏览");
+    } else {
+      History.look(item, selectedSection, selectedSubSection, "正常浏览");
+    }
+    
+    URI uri;
+    if (Setting.solution403 && item.getTid() != null && !item.getTid().isEmpty()) {
+      uri = URI.create("https://www.mcbbs.net/thread-" + item.getTid() + "-1-1.html");
+    } else {
+      uri = URI.create(item.getUrlString());
+    }
+    Desktop dp = Desktop.getDesktop();
+    if (dp.isSupported(Desktop.Action.BROWSE)) {
+      try {
+        dp.browse(uri);
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
   }
 }

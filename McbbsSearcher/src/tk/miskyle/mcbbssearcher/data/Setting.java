@@ -7,14 +7,16 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Properties;
 import java.util.Timer;
+import tk.miskyle.mcbbssearcher.McbbsSearcher;
+import tk.miskyle.mcbbssearcher.form.McbbsUserForm;
 import tk.miskyle.mcbbssearcher.util.AutoSaveTimer;
 
 public class Setting {
-  public static final String SETTING_FILE_PATH = "./setting.properties";
+  public static final String SETTING_FILE_PATH = McbbsSearcher.DATA_FLOD + "./setting.properties";
   
   //about mcbbs user cookies
   public static HashMap<String, McbbsUserData> mcbbsUserCookies = new HashMap<>();
-  public static McbbsUserData mainUser;
+  public static McbbsUserData mainUser = null;
   
   //about auto save
   public static boolean enableAutoSave;
@@ -24,6 +26,16 @@ public class Setting {
   
   //about 403 solution
   public static boolean solution403;
+  
+  /**
+   * 检查是否第一次运行.
+   */
+  public static void checker() {
+    if (!new File(SETTING_FILE_PATH).exists()) {
+      McbbsUserForm.showUsers(true);
+      save();
+    }
+  }
   
   /**
    * 保存所有设定.
@@ -42,8 +54,7 @@ public class Setting {
       pro.setProperty("user.list." + k,  v.getCookies());
       sb.append(k + ";");
     });
-    pro.setProperty("user.users", sb.substring(0, sb.length() - 1));
-    
+    pro.setProperty("user.users", sb.toString());
     File file = new File(SETTING_FILE_PATH);
     try {
       pro.store(new FileOutputStream(file), "Setting Store");
@@ -73,6 +84,6 @@ public class Setting {
     }
     mainUser = mcbbsUserCookies.get(pro.getProperty("user.main"));
     
-    new Timer().schedule(new AutoSaveTimer(), 1000L, 60000L);
+    new Timer().schedule(new AutoSaveTimer(), 60000L, 60000L);
   }
 }
