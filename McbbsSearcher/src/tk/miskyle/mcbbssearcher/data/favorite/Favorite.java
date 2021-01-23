@@ -8,6 +8,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -68,7 +69,7 @@ public class Favorite {
     faItem.setSaveTime(new Date().getTime());
     favoriteList.get(name).put(item.getTitle(), faItem);
     File file = new File(getPath(name, true), 
-        item.getTitle().replaceAll("[:/\\\":?<>]", "") + "." 
+        item.getTitle().replaceAll("[|:/\\\":?<>]", "") + "." 
             + new SimpleDateFormat(Item.POST_TIME_FORMAT)
                        .format(new Date().getTime()) + ".html");
     
@@ -90,7 +91,7 @@ public class Favorite {
     }
     try (BufferedReader reader = new BufferedReader(
         new InputStreamReader(connection.getConnection().getInputStream(), "UTF-8"));
-        BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8")) {
       String line = null;
       while ((line = reader.readLine()) != null) {
         writer.write(line);

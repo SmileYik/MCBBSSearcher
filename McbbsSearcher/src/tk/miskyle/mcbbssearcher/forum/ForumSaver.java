@@ -15,7 +15,7 @@ import tk.miskyle.mcbbssearcher.forum.data.SubSection;
 import tk.miskyle.mcbbssearcher.forum.update.ForumUpdate;
 
 public class ForumSaver {
-  public static final String FORUM_FILE_PATH = McbbsSearcher.DATA_FLOD + "./forum.properties";
+  public static final String FORUM_FILE_PATH = McbbsSearcher.DATA_FLOD + "/forum.properties";
   
   public static boolean checkProperties() {
     return new File(FORUM_FILE_PATH).exists();

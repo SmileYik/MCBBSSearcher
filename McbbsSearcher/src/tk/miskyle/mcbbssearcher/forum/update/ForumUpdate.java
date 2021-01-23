@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.LinkedList;
 import org.junit.Test;
+
+import tk.miskyle.mcbbssearcher.form.MainForm;
 import tk.miskyle.mcbbssearcher.forum.data.Forum;
 import tk.miskyle.mcbbssearcher.forum.data.Item;
 import tk.miskyle.mcbbssearcher.forum.data.Section;
@@ -34,7 +36,8 @@ public class ForumUpdate {
    * 更新论坛板块数据.
    */
   public static Forum updateForum() {
-    McbbsConnection connection = McbbsConnection.newGetConnect(FORUM_URL);
+    McbbsConnection connection = McbbsConnection.newGetConnect(FORUM_URL,
+        MainForm.getUpdateUser());
     if (connection == null) {
       //连接失败
       return null;
@@ -71,7 +74,8 @@ public class ForumUpdate {
    * @param section 目的板块
    */
   public static void updateSection(Section section) {
-    McbbsConnection connection = McbbsConnection.newGetConnect(section.getUrlString());
+    McbbsConnection connection = McbbsConnection.newGetConnect(section.getUrlString(),
+        MainForm.getUpdateUser());
     if (connection == null) {
       // 连接失败
       return;
@@ -108,7 +112,8 @@ public class ForumUpdate {
       return;
     }
     McbbsConnection connection = 
-        McbbsConnection.newGetConnect(sub.getUrlString().replace(Section.INDEX_SPLIT, "1"));
+        McbbsConnection.newGetConnect(sub.getUrlString().replace(Section.INDEX_SPLIT, "1"),
+            MainForm.getUpdateUser());
     if (connection == null) {
       // 连接失败
       return;
@@ -140,7 +145,8 @@ public class ForumUpdate {
    */
   public static void updateSubSection(SubSection sub, int page) {
     McbbsConnection connection = 
-        McbbsConnection.newGetConnect(sub.getUrlString().replace(Section.INDEX_SPLIT, page + ""));
+        McbbsConnection.newGetConnect(
+            sub.getUrlString().replace(Section.INDEX_SPLIT, page + ""), MainForm.getUpdateUser());
     if (connection == null) {
       // 连接失败
       return;

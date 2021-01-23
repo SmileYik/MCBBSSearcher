@@ -39,6 +39,8 @@ import javax.swing.table.TableRowSorter;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+
+import tk.miskyle.mcbbssearcher.data.McbbsUserData;
 import tk.miskyle.mcbbssearcher.data.Setting;
 import tk.miskyle.mcbbssearcher.data.favorite.Favorite;
 import tk.miskyle.mcbbssearcher.data.favorite.FavoriteItem;
@@ -51,6 +53,7 @@ import tk.miskyle.mcbbssearcher.forum.update.ForumUpdate;
 
 public class MainForm {
   private static JLabel lblInfo;
+  private static JCheckBox chckbxUpdateUseMainUser;
   
   private JFrame frmMcbbssearcherVBy;
   private JTextField tfSearchBox;
@@ -104,6 +107,8 @@ public class MainForm {
   private String selectedSection;
   private boolean favorite = false;
   private boolean history = false;
+  private JButton btnDeleteForum;
+  private JButton btnCreateForum;
 
   
   /**
@@ -173,6 +178,12 @@ public class MainForm {
     
     btnLoadIn = new JButton("导入");
     treeFormMenu.add(btnLoadIn);
+    
+    btnCreateForum = new JButton("添加");
+    treeFormMenu.add(btnCreateForum);
+    
+    btnDeleteForum = new JButton("删除");
+    treeFormMenu.add(btnDeleteForum);
     
     JScrollPane scrollPane1 = new JScrollPane();
     tabbedPane.addTab("收藏夹", null, scrollPane1, null);
@@ -245,6 +256,10 @@ public class MainForm {
     btnSaveSetting = new JButton("保存设定");
     btnSaveSetting.setBounds(10, 44, 172, 32);
     panel.add(btnSaveSetting);
+    
+    chckbxUpdateUseMainUser = new JCheckBox("使用主用户更新板块");
+    chckbxUpdateUseMainUser.setBounds(19, 285, 163, 23);
+    panel.add(chckbxUpdateUseMainUser);
     
     JScrollPane scrollPane2 = new JScrollPane();
     scrollPane2.setBounds(201, 38, 816, 432);
@@ -477,7 +492,7 @@ public class MainForm {
           return;
         }
         Item item = 
-            items.get(tableItems.getModel().getValueAt(tableItems.getSelectedRow(), 0));
+            items.get(tableItems.getValueAt(tableItems.getSelectedRow(), 0));
         browse(item);
       }
     });
@@ -495,7 +510,7 @@ public class MainForm {
           return;
         }
         Item item = 
-            items.get(tableItems.getModel().getValueAt(tableItems.getSelectedRow(), 0));
+            items.get(tableItems.getValueAt(tableItems.getSelectedRow(), 0));
         FavoriteSelectForm.show(item);
         if (Setting.enableSaveWhenLike) {
           Favorite.save();
@@ -510,7 +525,7 @@ public class MainForm {
         if (e.getClickCount() == 1
             && tableItems.getSelectedRow() != -1
             && tableItems.getSelectedRows().length == 1) {
-          String name = (String) tableItems.getModel().getValueAt(tableItems.getSelectedRow(), 0);
+          String name = (String) tableItems.getValueAt(tableItems.getSelectedRow(), 0);
           if (favorite) {
             FavoriteItem item = Favorite.getNowShowItems().get(name);
             String text = item.getAttachString() + " ---" + item.getSaveTimeString(); 
@@ -529,7 +544,7 @@ public class MainForm {
         }
         
         Item item = 
-            items.get(tableItems.getModel().getValueAt(tableItems.getSelectedRow(), 0));
+            items.get(tableItems.getValueAt(tableItems.getSelectedRow(), 0));
         browse(item);
       }
     });
@@ -665,6 +680,55 @@ public class MainForm {
           setupForumList();
         }
         
+      }
+    });
+    
+    //删除板块.
+    btnDeleteForum.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        treeFormMenu.setVisible(false);
+        
+        if (treeForum.isSelectionEmpty()) {
+          return;
+        }
+        TreePath path = treeForum.getSelectionPath();
+        if (path.getPathCount() == 3) {
+          String section = path.getPath()[1].toString();
+          String subSection = path.getPath()[2].toString();
+          String code = JOptionPane.showInputDialog(frmMcbbssearcherVBy, 
+                     "你确定要删除\"" + subSection + "\"这个子版块吗?\n"
+                  + "这将永远失去这个子版块中保存的所有条目.\n"
+                  + "若执意要删除则请输入这个子版块的名称以进行确认.");
+          if (code == null || !code.equals(subSection)) {
+            JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "取消删除!");
+          } else {
+            ForumManager.getForum().getSections().get(section).getSubs().remove(subSection);
+            setupForumList();
+            JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "删除完成!");
+          }
+        } else if (path.getPathCount() == 2) {
+          String section = path.getPath()[1].toString();
+          String code = JOptionPane.showInputDialog(frmMcbbssearcherVBy,
+                                      "你确定要删除\"" + section + "\"这个子版块吗?\n" 
+                                  + "这将永远失去这个子版块中保存的所有条目.\n" 
+                                  + "若执意要删除则请输入这个子版块的名称以进行确认.");
+          if (code == null || !code.equals(section)) {
+            JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "取消删除!");
+          } else {
+            ForumManager.getForum().getSections().remove(section);
+            setupForumList();
+            JOptionPane.showMessageDialog(frmMcbbssearcherVBy, "删除完成!");
+          }
+        }
+      }
+    });
+    
+    //添加子版块.
+    btnCreateForum.addActionListener(new ActionListener() {
+      public void actionPerformed(ActionEvent e) {
+        treeFormMenu.setVisible(false);
+        CreateSectionForm.showForm();
+        setupForumList();
       }
     });
     
@@ -1047,5 +1111,17 @@ public class MainForm {
         e.printStackTrace();
       }
     }
+  }
+  
+  /**
+   * 获取更新板块时的用户信息.
+   * @return
+   */
+  public static McbbsUserData getUpdateUser() {
+    if (chckbxUpdateUseMainUser == null 
+        || !chckbxUpdateUseMainUser.isSelected()) {
+      return McbbsUserData.user;
+    }
+    return Setting.mainUser;
   }
 }
