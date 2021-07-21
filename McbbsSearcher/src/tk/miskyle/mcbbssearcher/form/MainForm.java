@@ -257,7 +257,7 @@ public class MainForm {
     btnSaveSetting.setBounds(10, 44, 172, 32);
     panel.add(btnSaveSetting);
     
-    chckbxUpdateUseMainUser = new JCheckBox("使用主用户更新板块");
+    chckbxUpdateUseMainUser = new JCheckBox("使用主用户.更新板块");
     chckbxUpdateUseMainUser.setBounds(19, 285, 163, 23);
     panel.add(chckbxUpdateUseMainUser);
     
@@ -268,7 +268,9 @@ public class MainForm {
     tableItems = new JTable();
     tableItemsModel = getDefaltTableModel();
     tableItems.setModel(tableItemsModel);
-    tableItems.setRowSorter(new TableRowSorter<DefaultTableModel>(tableItemsModel));
+    TableRowSorter<DefaultTableModel> sorter = 
+        new TableRowSorter<DefaultTableModel>(tableItemsModel);
+    tableItems.setRowSorter(sorter);
     tableItems.setCellSelectionEnabled(true);
     tableItems.getColumnModel().getColumn(0).setPreferredWidth(750);
     tableItems.getColumnModel().getColumn(1).setPreferredWidth(60);
