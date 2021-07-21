@@ -23,6 +23,20 @@ public class Item extends HttpPage {
   public Item() {
     
   }
+  
+  public void copyFrom(Item item) {
+    tid = item.tid;
+    title = item.title;
+    postTime = item.postTime;
+    auther = item.auther;
+    replyTime = item.replyTime;
+    view = item.view;
+    reply = item.reply;
+    heatlevel = item.heatlevel;
+    digest = item.digest;
+    agree = item.agree;
+    recommend = item.recommend;
+  }
 
   /**
    * 获取帖子标题.

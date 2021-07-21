@@ -12,7 +12,7 @@ import tk.miskyle.mcbbssearcher.form.McbbsUserForm;
 import tk.miskyle.mcbbssearcher.util.AutoSaveTimer;
 
 public class Setting {
-  public static final String SETTING_FILE_PATH = McbbsSearcher.DATA_FLOD + "./setting.properties";
+  public static final String SETTING_FILE_PATH = McbbsSearcher.DATA_FLOD + "/setting.properties";
   
   //about mcbbs user cookies
   public static HashMap<String, McbbsUserData> mcbbsUserCookies = new HashMap<>();
@@ -26,6 +26,14 @@ public class Setting {
   
   //about 403 solution
   public static boolean solution403;
+  
+  // about font
+  public static String fontName;
+  public static int fontSize;
+  
+  // about window h&w
+  public static int wh;
+  public static int ww;
   
   /**
    * 检查是否第一次运行.
@@ -48,7 +56,12 @@ public class Setting {
     pro.setProperty("save.saveTile", saveTime + "");
     pro.setProperty("solution403", solution403 + "");
     pro.setProperty("user.main", mainUser.getUserName());
-    
+    pro.setProperty("window.height", wh + "");
+    pro.setProperty("window.width", ww + "");
+    if (fontName != null) {
+      pro.setProperty("font.name", fontName);
+      pro.setProperty("font.size", fontSize + "");
+    }
     StringBuilder sb = new StringBuilder();
     mcbbsUserCookies.forEach((k, v) -> {
       pro.setProperty("user.list." + k,  v.getCookies());
@@ -79,6 +92,10 @@ public class Setting {
     enableSaveWhenUpdate = Boolean.parseBoolean(pro.getProperty("save.update"));
     solution403 = Boolean.parseBoolean(pro.getProperty("solution403"));
     saveTime = Integer.parseInt(pro.getProperty("save.saveTile"));
+    fontName = pro.getProperty("font.name", null);
+    fontSize = Integer.parseInt(pro.getProperty("font.size", "12"));
+    wh = Integer.parseInt(pro.getProperty("window.height", "0"));
+    ww = Integer.parseInt(pro.getProperty("window.width", "0"));
     for (String key : pro.getProperty("user.users").split(";")) {
       mcbbsUserCookies.put(key, new McbbsUserData(key, pro.getProperty("user.list." + key)));
     }

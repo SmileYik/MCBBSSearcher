@@ -1,39 +1,45 @@
 package tk.miskyle.mcbbssearcher.form;
 
+import java.awt.Component;
+import java.awt.Container;
+import java.awt.Desktop;
 import java.awt.EventQueue;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.Component;
-import java.awt.Desktop;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
-import javax.swing.JPopupMenu;
-import javax.swing.SwingConstants;
-import javax.swing.JCheckBox;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import javax.swing.JMenuBar;
-import javax.swing.JOptionPane;
+
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
-import javax.swing.JTabbedPane;
-import javax.swing.JScrollPane;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JMenu;
-import javax.swing.JLabel;
+import javax.swing.JMenuBar;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
+import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
+import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.JTree;
-import javax.swing.JProgressBar;
-import javax.swing.JTable;
+import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableRowSorter;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -55,7 +61,7 @@ public class MainForm {
   private static JLabel lblInfo;
   private static JCheckBox chckbxUpdateUseMainUser;
   
-  private JFrame frmMcbbssearcherVBy;
+  private static JFrame frmMcbbssearcherVBy;
   private JTextField tfSearchBox;
   private JTable tableItems;
   private JTabbedPane tabbedPane;
@@ -68,6 +74,8 @@ public class MainForm {
   private JButton btnStopUpdate;
   private JButton btnShowHistory;
   private JProgressBar progressBar;
+  private JScrollPane scrollPane2;
+  private JMenuBar menuBar;
 
   //Setting
   private JPanel panel;
@@ -109,6 +117,7 @@ public class MainForm {
   private boolean history = false;
   private JButton btnDeleteForum;
   private JButton btnCreateForum;
+  private JButton tfmUpdate_1;
 
   
   /**
@@ -132,7 +141,7 @@ public class MainForm {
    */
   public MainForm() {
     initialize();
-
+    setFont(Setting.fontName, Setting.fontSize);
     setupForumList();
     setupListener();
     refreshSetting();
@@ -145,7 +154,11 @@ public class MainForm {
   private void initialize() {
     frmMcbbssearcherVBy = new JFrame();
     frmMcbbssearcherVBy.setTitle("McbbsSearcher  v1.0.0  by: miSkYle");
-    frmMcbbssearcherVBy.setBounds(100, 100, 1035, 533);
+    if (Setting.wh != 0 && Setting.ww != 0) {
+      frmMcbbssearcherVBy.setBounds(100, 100, Setting.ww, Setting.wh);
+    } else {
+      frmMcbbssearcherVBy.setBounds(100, 100, 1035, 533);      
+    }
     frmMcbbssearcherVBy.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
     frmMcbbssearcherVBy.getContentPane().setLayout(null);
     
@@ -172,6 +185,9 @@ public class MainForm {
     
     tfmUpdate = new JButton("更新");
     treeFormMenu.add(tfmUpdate);
+    
+    tfmUpdate_1 = new JButton("清除");
+    treeFormMenu.add(tfmUpdate_1);
     
     btnStoreOut = new JButton("导出");
     treeFormMenu.add(btnStoreOut);
@@ -261,7 +277,7 @@ public class MainForm {
     chckbxUpdateUseMainUser.setBounds(19, 285, 163, 23);
     panel.add(chckbxUpdateUseMainUser);
     
-    JScrollPane scrollPane2 = new JScrollPane();
+    scrollPane2 = new JScrollPane();
     scrollPane2.setBounds(201, 38, 816, 432);
     frmMcbbssearcherVBy.getContentPane().add(scrollPane2);
     
@@ -295,7 +311,7 @@ public class MainForm {
     tableMeum.add(btnAddToFavorite);
     scrollPane2.setViewportView(tableItems);
     
-    JMenuBar menuBar = new JMenuBar();
+    menuBar = new JMenuBar();
     menuBar.setBounds(201, 10, 813, 27);
     frmMcbbssearcherVBy.getContentPane().add(menuBar);
     
@@ -635,6 +651,27 @@ public class MainForm {
             progressBar.setValue(size);
           }
         }, 300L, 300L);
+      }
+    });
+    
+    // 清除板块内容
+    tfmUpdate_1.addMouseListener(new MouseAdapter() {
+      @Override
+      public void mouseClicked(MouseEvent e) {
+        treeFormMenu.setVisible(false);
+        
+        if (treeForum.isSelectionEmpty()) {
+          return;
+        }
+        TreePath path = treeForum.getSelectionPath();
+        if (path.getPathCount() != 3) {
+          return;
+        }
+        String section = path.getPath()[1].toString();
+        String subSection = path.getPath()[2].toString();
+        SubSection subS = 
+            ForumManager.getForum().getSections().get(section).getSubs().get(subSection);
+        subS.getItems().clear();
       }
     });
     
@@ -1000,6 +1037,41 @@ public class MainForm {
         showHistory();
       }
     });
+    
+    
+    // 窗口大小改变
+    frmMcbbssearcherVBy.addComponentListener(new ComponentAdapter() {
+      @Override
+      public void componentResized(ComponentEvent e) {
+        progressBar.setBounds(
+            0, frmMcbbssearcherVBy.getContentPane().getHeight() - 30, 
+            frmMcbbssearcherVBy.getContentPane().getWidth(), 27);
+        lblInfo.setBounds(
+            0, frmMcbbssearcherVBy.getContentPane().getHeight() - 30, 
+            frmMcbbssearcherVBy.getContentPane().getWidth(), 27);
+        
+        tabbedPane.setBounds(
+            tabbedPane.getX(), 
+            tabbedPane.getY(), 
+            tabbedPane.getWidth(), 
+            frmMcbbssearcherVBy.getContentPane().getHeight() - 43);
+        
+        scrollPane2.setBounds(
+            scrollPane2.getX(), 
+            scrollPane2.getY(), 
+            frmMcbbssearcherVBy.getContentPane().getWidth() - tabbedPane.getWidth(),
+            tabbedPane.getHeight() - 27);
+      
+        menuBar.setBounds(
+            menuBar.getX(), 
+            menuBar.getY(), 
+            scrollPane2.getWidth(), 
+            menuBar.getHeight());
+        
+        Setting.wh = frmMcbbssearcherVBy.getHeight();
+        Setting.ww = frmMcbbssearcherVBy.getWidth();
+      }
+    });
   }
   
   private void showHistory() {
@@ -1117,6 +1189,7 @@ public class MainForm {
   
   /**
    * 获取更新板块时的用户信息.
+
    * @return
    */
   public static McbbsUserData getUpdateUser() {
@@ -1125,5 +1198,23 @@ public class MainForm {
       return McbbsUserData.user;
     }
     return Setting.mainUser;
+  }
+  
+  private static void setFont(String fontName, int fontSize) {
+    if (fontName == null) {
+      return;
+    }
+    Font f = new Font(fontName, Font.PLAIN, fontSize);
+    LinkedList<Component> list = new LinkedList<>();
+    list.add(frmMcbbssearcherVBy);
+    while (!list.isEmpty()) {
+      Component c = list.poll();
+      c.setFont(f);
+      if (c instanceof Container) {
+        for (Component temp : ((Container) c).getComponents()) {
+          list.add(temp);
+        }
+      }
+    }
   }
 }

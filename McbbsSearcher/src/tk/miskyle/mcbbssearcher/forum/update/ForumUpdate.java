@@ -251,7 +251,16 @@ public class ForumUpdate {
             }
           }
           System.out.println(item);
-          sub.getItems().add(item);
+          boolean flag = true;
+          for (Item temp : sub.getItems()) {
+            if (temp.getTid() == item.getTid()) {
+              temp.copyFrom(item);
+              flag = false;
+            }
+          }
+          if (flag) {
+            sub.getItems().add(item);            
+          }
           start = -1;
         }
         index++;

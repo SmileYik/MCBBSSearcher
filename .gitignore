@@ -2,3 +2,6 @@
 McbbsSearcher/bin/*
 McbbsSearcher/*.properties
 McbbsSearcher/*.properties1
+McbbsSearcher/McbbsSearcher/histort.properties
+McbbsSearcher/McbbsSearcher/favorite.properties
+*.properties
